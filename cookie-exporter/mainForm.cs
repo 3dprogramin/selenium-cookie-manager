@@ -46,6 +46,7 @@ namespace cookie_exporter
         #region main
         private void start()
         {
+            // UI init
             bool is_chrome = radioChrome.Checked;
             btnStart.Text = "Stop";
             groupExport.Enabled = true;
@@ -57,9 +58,12 @@ namespace cookie_exporter
         }
         private void stop()
         {
+            // UI init
             btnStart.Text = "Start";
             groupExport.Enabled = false;
             btnDeleteCookies.Enabled = false;
+
+            // dispose browser (if not null)
             if(this._driver != null)
             {
                 try
@@ -72,6 +76,7 @@ namespace cookie_exporter
         private void export()
         {
             string filename = txtCookies.Text;
+            // check if filename was given
             if (string.IsNullOrWhiteSpace(filename))
             {
                 MessageBox.Show("Type a filename first");
@@ -83,9 +88,16 @@ namespace cookie_exporter
         private void import()
         {
             string filename = txtImport.Text;
+            // check if file was given
             if (string.IsNullOrWhiteSpace(filename))
             {
                 MessageBox.Show("Type a filename first");
+                return;
+            }
+            // check if file exists
+            if(!File.Exists(filename))
+            {
+                MessageBox.Show(string.Format("{0} does not exist", filename));
                 return;
             }
             int imported = import_cookies(filename);
@@ -94,7 +106,7 @@ namespace cookie_exporter
         private void delete_all_cookies()
         {
             if (this._driver == null) return;
-            this._driver.Manage().Cookies.DeleteAllCookies();
+            this._driver.Manage().Cookies.DeleteAllCookies();       // clear all cookies
             MessageBox.Show("Cookies cleared");
         }
         #endregion
@@ -102,6 +114,7 @@ namespace cookie_exporter
         #region cookie handling
         private void export_cookies(string filename)
         {
+            // Open streamwriter for writing to file
             using (StreamWriter wr = new StreamWriter(filename))
             {
                 foreach (var cookie in this._driver.Manage().Cookies.AllCookies)
@@ -117,24 +130,33 @@ namespace cookie_exporter
         {
             int imported = 0;
             string last_domain = "";
+            
+            // start reading from file
             using (StreamReader wr = new StreamReader(filename))
             {
                 string line = "";
                 while (wr.Peek() >= 0)
                 {
-                    
+                    // line by line
                     line = wr.ReadLine();
+                    
+                    // split it by our delimiter
                     var s = line.Split(new string[] { ";;_^_;;" }, StringSplitOptions.None);
-                    if (string.IsNullOrWhiteSpace(s[4])) s[4] = "05/01/2030";
+                    // if no date given, set it to somewhere in the future
+                    if (string.IsNullOrWhiteSpace(s[4])) s[4] = "05/01/2030";    
+
                     // create cookie from string/s
                     Cookie c = new Cookie(s[0], s[1], s[2], s[3], Convert.ToDateTime(s[4]));
                     
+                    // IMPORTANT
+                    // ---------
                     // go to domain, if not already there
+                    // otherwise, import / adding the cookie will throw an error
                     if (!this._driver.Url.Contains(c.Domain))
                         this._driver.Navigate().GoToUrl(c.Domain.StartsWith("http") ? c.Domain : "http://" + c.Domain);
                     this._driver.Manage().Cookies.AddCookie(c);     // add cookie to browser
                     imported++;                                     // keep a counter
-                    last_domain = this._driver.Url;
+                    last_domain = this._driver.Url;                 // use it to go to it, once all imported, so we're logged in (eventually)
                 }
             }
             this._driver.Navigate().GoToUrl(last_domain);       // go to last domain
