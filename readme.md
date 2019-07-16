@@ -12,3 +12,6 @@ Manage selenium cookies in chromedriver (Chrome) and geckodriver (Firefox).
 - friendly UI
 
 ![screenshot](https://i.imgur.com/OLa9JoM.png)
+
+### License
+MIT

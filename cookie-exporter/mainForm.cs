@@ -82,8 +82,8 @@ namespace cookie_exporter
                 MessageBox.Show("Type a filename first");
                 return;
             }
-            export_cookies(filename);
-            MessageBox.Show(string.Format("Cookies exported to {0}", filename));
+            int exported = export_cookies(filename);
+            MessageBox.Show(string.Format("{0} cookies exported to {1}", exported, filename));
         }
         private void import()
         {
@@ -112,7 +112,7 @@ namespace cookie_exporter
         #endregion
 
         #region cookie handling
-        private void export_cookies(string filename)
+        private int export_cookies(string filename)
         {
             // Open streamwriter for writing to file
             using (StreamWriter wr = new StreamWriter(filename))
@@ -125,6 +125,7 @@ namespace cookie_exporter
                     wr.WriteLine(c);
                 }
             }
+            return this._driver.Manage().Cookies.AllCookies.Count;
         }
         private int import_cookies(string filename)
         {
